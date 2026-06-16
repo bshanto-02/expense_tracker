@@ -1,13 +1,3 @@
-# ============================================================
-#  EXPENSE TRACKER — Flask Web App  |  DecodeLabs Project 2
-#  Key Skills:
-#    - Accumulator pattern  →  total += new_expense
-#    - Type casting (Gatekeeper)  →  float(input)
-#    - Defensive coding  →  try / except ValueError
-#    - Sentinel value (Kill Switch)  →  "done" breaks the loop
-#    - IPO Model: Input → Process → Output
-# ============================================================
-
 from flask import Flask, render_template, request, redirect, url_for, flash
 
 app = Flask(__name__)
