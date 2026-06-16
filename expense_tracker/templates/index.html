@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Expense Tracker — DecodeLabs P2</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<div class="page">
+
+  <!-- ── HEADER ─────────────────────────────────────── -->
+  <header class="header">
+    <div class="header-inner">
+      <div class="brand">
+        <span class="brand-icon">⬡</span>
+        <div>
+          <div class="brand-name">Expense Tracker</div>
+          <div class="brand-sub">DecodeLabs · Project 2 · Batch 2026</div>
+        </div>
+      </div>
+      <div class="total-badge">
+        <span class="total-label">TOTAL SPENT</span>
+        <span class="total-value">{{ "%.2f"|format(total) }}</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="main">
+
+    <!-- ── FLASH MESSAGES ──────────────────────────── -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flashes">
+          {% for category, message in messages %}
+            <div class="flash flash--{{ category }}">
+              <span class="flash-icon">
+                {% if category == 'success' %}✔{% elif category == 'error' %}✘{% else %}ℹ{% endif %}
+              </span>
+              {{ message }}
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <!-- ── STATS ROW ────────────────────────────────── -->
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-val">{{ count }}</div>
+        <div class="stat-key">Transactions</div>
+      </div>
+      <div class="stat-card stat-card--accent">
+        <div class="stat-val">{{ "%.2f"|format(total) }}</div>
+        <div class="stat-key">Total Spent</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val">{{ "%.2f"|format(avg) }}</div>
+        <div class="stat-key">Average</div>
+      </div>
+    </div>
+
+    <!-- ── ADD FORM ─────────────────────────────────── -->
+    <section class="form-section">
+      <div class="section-eyebrow">INPUT · THE GATE</div>
+      <form action="/add" method="POST" class="add-form">
+        <div class="field">
+          <label class="field-label" for="label">Description</label>
+          <input id="label" type="text" name="label" class="field-input"
+                 placeholder="e.g. Coffee, Groceries, Rent…" autocomplete="off"/>
+        </div>
+        <div class="field field--amount">
+          <label class="field-label" for="amount">Amount <span class="hint">(type "done" to close session)</span></label>
+          <input id="amount" type="text" name="amount" class="field-input field-input--mono"
+                 placeholder="e.g. 100, 49.99" autocomplete="off" autofocus required/>
+        </div>
+        <button type="submit" class="btn-add">Add Expense</button>
+      </form>
+    </section>
+
+    <!-- ── LEDGER TABLE ─────────────────────────────── -->
+    <section class="ledger-section">
+      <div class="section-eyebrow">PROCESS · THE ENGINE</div>
+      <div class="ledger-header">
+        <span>Transaction Ledger</span>
+        {% if expenses %}
+          <a href="/reset" class="btn-reset" onclick="return confirm('Reset accumulator to zero?')">Reset All</a>
+        {% endif %}
+      </div>
+
+      {% if expenses %}
+        <div class="ledger">
+          <div class="ledger-cols">
+            <span>#</span>
+            <span>Description</span>
+            <span>Amount</span>
+            <span>Running Total</span>
+            <span></span>
+          </div>
+
+          {% set ns = namespace(running=0) %}
+          {% for exp in expenses %}
+            {% set ns.running = ns.running + exp.amount %}
+            <div class="ledger-row">
+              <span class="cell-id">{{ exp.id }}</span>
+              <span class="cell-label">{{ exp.label }}</span>
+              <span class="cell-amount">{{ "%.2f"|format(exp.amount) }}</span>
+              <span class="cell-running">
+                {{ "%.2f"|format(ns.running) }}
+                <!-- LEARN: This is the accumulator visualized per-row -->
+              </span>
+              <a href="/delete/{{ exp.id }}" class="btn-del" title="Remove">✕</a>
+            </div>
+          {% endfor %}
+
+          <div class="ledger-total-row">
+            <span></span>
+            <span>FINAL TOTAL</span>
+            <span></span>
+            <span class="final-total">{{ "%.2f"|format(total) }}</span>
+            <span></span>
+          </div>
+        </div>
+
+      {% else %}
+        <div class="empty-ledger">
+          <span class="empty-icon">📋</span>
+          <p>No transactions yet.</p>
+          <p class="empty-sub">Add your first expense above to start the accumulator.</p>
+        </div>
+      {% endif %}
+    </section>
+
+    <!-- ── LEARNING PANEL ───────────────────────────── -->
+    <aside class="learn-panel">
+      <div class="learn-title">⚙ How the Backend Engine Works</div>
+      <div class="learn-grid">
+        <div class="learn-item">
+          <div class="learn-item-head">🔒 Gatekeeper (Phase 1)</div>
+          <code>float(request.form['amount'])</code>
+          <p>Casts raw string input to a number. "ten" crashes here — that's the point.</p>
+        </div>
+        <div class="learn-item">
+          <div class="learn-item-head">📈 Accumulator (Phase 2)</div>
+          <code>total += amount</code>
+          <p>State(new) = State(old) + Input. <code>total</code> is set once, outside all requests.</p>
+        </div>
+        <div class="learn-item">
+          <div class="learn-item-head">🛡 Defensive Coding</div>
+          <code>try: … except ValueError:</code>
+          <p>The Poka-Yoke. Invalid data is rejected before it corrupts the ledger.</p>
+        </div>
+        <div class="learn-item">
+          <div class="learn-item-head">🔴 Sentinel Value</div>
+          <code>if raw == "done": break</code>
+          <p>A special input that signals "stop". No magic numbers — just a meaningful keyword.</p>
+        </div>
+      </div>
+    </aside>
+
+  </main>
+</div>
+
+</body>
+</html>
