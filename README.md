@@ -1,5 +1,4 @@
-# Expense Tracker — DecodeLabs Project 2
-**Python Industrial Training Kit · Batch 2026**
+# Expense Tracker
 
 ---
 
