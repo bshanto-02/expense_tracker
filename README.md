@@ -1,7 +1,5 @@
 # Expense Tracker
 
----
-
 ## Setup & Run
 
 ```bash
